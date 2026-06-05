@@ -21,19 +21,15 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  height: 100%;
   font-family: "Inter", sans-serif;
   overflow-x: hidden;
-  scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   background: var(--white);
 }
 .slide {
   width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-  scroll-snap-align: start;
+  min-height: 100vh;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -49,7 +45,8 @@ html, body {
   margin: 0 auto;
   width: 100%;
   padding: var(--pad);
-  padding-top: 80px;
+  padding-top: 88px;
+  padding-bottom: 60px;
   position: relative;
   z-index: 2;
 }
@@ -58,11 +55,7 @@ html, body {
   height: 3px; background: var(--yellow);
   z-index: 100; transition: width .4s var(--ease);
 }
-.nav-dots {
-  position: fixed; right: 20px; top: 50%;
-  transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 8px; z-index: 100;
-}
+.nav-dots { display: none; }
 .nav-dot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--gray-blue); cursor: pointer;
@@ -549,52 +542,31 @@ p { font-size: clamp(12px, 1.3vw, 15px); color: var(--slate); line-height: 1.7; 
 </section>
 
 <script>
-const slides = document.querySelectorAll(".slide");
-const dotsContainer = document.getElementById("nav-dots");
 const progressBar = document.getElementById("progress-bar");
-let current = 0;
 
-slides.forEach((_, i) => {
-  const dot = document.createElement("div");
-  dot.className = "nav-dot" + (i === 0 ? " active" : "");
-  dot.onclick = () => slides[i].scrollIntoView({ behavior: "smooth" });
-  dotsContainer.appendChild(dot);
+// Scroll-based progress bar
+window.addEventListener("scroll", () => {
+  const total = document.body.scrollHeight - window.innerHeight;
+  const pct = (window.scrollY / total) * 100;
+  progressBar.style.width = pct + "%";
 });
 
-function animateSlide(slide) {
-  slide.querySelectorAll(".r, .rl, .rs").forEach(el => el.classList.remove("in"));
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    slide.querySelectorAll(".r, .rl, .rs").forEach(el => el.classList.add("in"));
-  }));
-}
-
-function updateUI(index) {
-  current = index;
-  document.querySelectorAll(".nav-dot").forEach((d, i) => d.classList.toggle("active", i === index));
-  progressBar.style.width = ((index + 1) / slides.length * 100) + "%";
-  animateSlide(slides[index]);
-}
-
-const observer = new IntersectionObserver(entries => {
+// Reveal animaties op scroll
+const animEls = document.querySelectorAll(".r, .rl, .rs");
+const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) updateUI(parseInt(entry.target.dataset.slide));
+    if (entry.isIntersecting) {
+      entry.target.classList.add("in");
+    }
   });
-}, { threshold: 0.6 });
+}, { threshold: 0.15 });
 
-slides.forEach(s => observer.observe(s));
+animEls.forEach(el => revealObserver.observe(el));
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowDown" || e.key === " ") {
-    e.preventDefault();
-    if (current < slides.length - 1) slides[current + 1].scrollIntoView({ behavior: "smooth" });
-  }
-  if (e.key === "ArrowUp") {
-    e.preventDefault();
-    if (current > 0) slides[current - 1].scrollIntoView({ behavior: "smooth" });
-  }
+// Eerste slide direct animeren
+document.querySelectorAll(".slide:first-child .r, .slide:first-child .rl, .slide:first-child .rs").forEach(el => {
+  el.classList.add("in");
 });
-
-updateUI(0);
 </script>
 </body>
 </html>
